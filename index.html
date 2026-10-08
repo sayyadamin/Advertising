@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My AI Video Tool</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, 'Segoe UI', Roboto, sans-serif;
+    background: radial-gradient(ellipse at top, #1a1a2e 0%, #0a0a12 70%);
+    color: #e8e8f0;
+    min-height: 100vh;
+    padding: 16px;
+  }
+  .container { max-width: 700px; margin: 0 auto; }
+  h1 {
+    font-size: 20px; font-weight: 700; text-align: center; margin-bottom: 6px;
+    background: linear-gradient(90deg,#ff6b9d,#7c5cff,#00d4ff);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .sub { font-size: 12px; color: #8a8aa0; text-align: center; margin-bottom: 20px; }
+  .card {
+    background: rgba(23,23,31,0.85);
+    border: 1px solid #26263a;
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .step-badge {
+    display: inline-block;
+    background: linear-gradient(90deg,#7c5cff,#00d4ff);
+    color: #fff;
+    font-size: 10px; font-weight: 700;
+    padding: 3px 10px; border-radius: 99px;
+    margin-bottom: 12px;
+  }
+  .upload-label {
+    display: block;
+    border: 2px dashed #3a3a55;
+    border-radius: 12px;
+    padding: 24px 16px;
+    text-align: center;
+    cursor: pointer;
+    background: #12121a;
+  }
+  .upload-label .icon { font-size: 30px; display: block; margin-bottom: 6px; }
+  .upload-label p { font-size: 13px; color: #9a9ab0; }
+  .upload-label strong { color: #7c5cff; }
+  .file-input {
+    position: absolute; width: 1px; height: 1px;
+    opacity: 0; overflow: hidden;
+  }
+  .preview-thumb { display: none; margin-top: 12px; text-align: center; }
+  .preview-thumb.show { display: block; }
+  .preview-thumb img {
+    max-width: 100%; max-height: 220px;
+    border-radius: 10px; border: 1px solid #2e2e45;
+  }
+  .preview-thumb span {
+    display: block; font-size: 11px; color: #4ade80;
+    margin-top: 6px; font-weight: 600;
+  }
+  textarea, input[type=text] {
+    width: 100%;
+    background: #0f0f14;
+    border: 1px solid #2e2e45;
+    color: #e8e8f0;
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 13px;
+    font-family: inherit;
+    line-height: 1.5;
+  }
+  textarea { min-height: 100px; resize: vertical; }
+  label.field-label {
+    display: block; font-size: 11px; font-weight: 700;
+    color: #8a8aa0; margin-bottom: 6px;
+  }
+  .movement-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 6px; margin-top: 6px;
+  }
+  .movement-grid button {
+    background: #1a1a28;
+    border: 1px solid #2e2e45;
+    color: #c8c8dd;
+    border-radius: 8px;
+    padding: 10px 6px;
+    font-size: 11px; font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .movement-grid button.active {
+    background: linear-gradient(90deg,#7c5cff,#00d4ff);
+    color: #fff; border-color: transparent;
+  }
+  .btn-generate {
+    width: 100%;
+    border: none; border-radius: 12px;
+    padding: 16px 20px;
+    font-size: 15px; font-weight: 700;
+    cursor: pointer; font-family: inherit;
+    background: linear-gradient(90deg,#ff6b9d,#7c5cff,#00d4ff);
+    color: #fff;
+  }
+  .btn-generate:disabled { opacity: 0.5; }
+  .progress-wrap { display: none; margin-top: 16px; }
+  .progress-wrap.show { display: block; }
+  .progress-bar-outer {
+    width: 100%; height: 8px; background: #26263a;
+    border-radius: 99px; overflow: hidden; margin-bottom: 10px;
+  }
+  .progress-bar-inner {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg,#7c5cff,#00d4ff);
+    transition: width .4s; border-radius: 99px;
+  }
+  .progress-text {
+    font-size: 12px; color: #8a8aa0; text-align: center;
+  }
+  .result-box { display: none; margin-top: 16px; }
+  .result-box.show { display: block; }
+  .result-box video {
+    width: 100%; border-radius: 10px; background: #000;
+  }
+  .result-actions { display: flex; gap: 8px; margin-top: 10px; }
+  .result-actions a, .result-actions button {
+    flex: 1; border: none; border-radius: 10px;
+    padding: 12px 16px; font-size: 13px; font-weight: 700;
+    cursor: pointer; font-family: inherit;
+    text-decoration: none; text-align: center;
+  }
+  .btn-download {
+    background: linear-gradient(90deg,#4ade80,#00d4ff);
+    color: #0a0a10;
+  }
+  .btn-again { background: #26263a; color: #c8c8dd; }
+  .error-box {
+    display: none; margin-top: 12px; padding: 12px 14px;
+    background: #2b1010; border: 1px solid #6b1f1f;
+    border-radius: 10px; color: #ff6b6b;
+    font-size: 12px; text-align: center;
+  }
+  .error-box.show { display: block; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>🎬 My AI Video Tool</h1>
+  <p class="sub">Photo upload karo → AI cinematic video banayega</p>
+
+  <div class="card">
+    <span class="step-badge">STEP 1 — PHOTO</span>
+    <label class="upload-label" for="fileInput">
+      <span class="icon">📸</span>
+      <p><strong>Product photo upload karo</strong></p>
+      <input type="file" id="fileInput" class="file-input" accept="image/*">
+    </label>
+    <div class="preview-thumb" id="previewThumb">
+      <img id="previewImg" alt="preview">
+      <span>✅ Photo ready</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <span class="step-badge">STEP 2 — PROMPT</span>
+    <label class="field-label">Product ka naam</label>
+    <input type="text" id="productName" value="bag" style="margin-bottom:12px;">
+
+    <label class="field-label">Camera Movements</label>
+    <div class="movement-grid" id="movementGrid">
+      <button data-mv="a dolly out shot" class="active">🎬 Dolly Out</button>
+      <button data-mv="a horizontal truck movement" class="active">↔ Truck</button>
+      <button data-mv="a smooth arc sweep" class="active">🔄 Arc Sweep</button>
+      <button data-mv="a high-angle arc rotation" class="active">↗ High Arc</button>
+      <button data-mv="a block and truck movement" class="active">🎯 Block Truck</button>
+      <button data-mv="a 360-degree orbit">🌐 360° Orbit</button>
+    </div>
+
+    <label class="field-label" style="margin-top:12px;">Extra instructions</label>
+    <textarea id="extraPrompt">Cinematic lighting, professional product shot, ultra realistic</textarea>
+  </div>
+
+  <div class="card">
+    <span class="step-badge">STEP 3 — GENERATE</span>
+    <button class="btn-generate" id="generateBtn">🎬 Generate AI Video</button>
+
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-bar-outer">
+        <div class="progress-bar-inner" id="progressBar"></div>
+      </div>
+      <div class="progress-text" id="progressText">Starting...</div>
+    </div>
+
+    <div class="error-box" id="errorBox"></div>
+
+    <div class="result-box" id="resultBox">
+      <video id="resultVideo" controls playsinline></video>
+      <div class="result-actions">
+        <a class="btn-download" id="downloadBtn" download="ai_video.mp4">⬇ Download</a>
+        <button class="btn-again" id="againBtn">🔄 Naya Banao</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  const fileInput   = document.getElementById('fileInput');
+  const previewThumb= document.getElementById('previewThumb');
+  const previewImg  = document.getElementById('previewImg');
+  const productName = document.getElementById('productName');
+  const extraPrompt = document.getElementById('extraPrompt');
+  const generateBtn = document.getElementById('generateBtn');
+  const progressWrap= document.getElementById('progressWrap');
+  const progressBar = document.getElementById('progressBar');
+  const progressText= document.getElementById('progressText');
+  const errorBox    = document.getElementById('errorBox');
+  const resultBox   = document.getElementById('resultBox');
+  const resultVideo = document.getElementById('resultVideo');
+  const downloadBtn = document.getElementById('downloadBtn');
+  const againBtn    = document.getElementById('againBtn');
+
+  let imageDataUrl = null;
+
+  fileInput.addEventListener('change', e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    if (!f.type.startsWith('image/')) { alert('Image file daalo!'); return; }
+    const reader = new FileReader();
+    reader.onload = ev => {
+      imageDataUrl = ev.target.result;
+      previewImg.src = imageDataUrl;
+      previewThumb.classList.add('show');
+      hideError();
+    };
+    reader.readAsDataURL(f);
+  });
+
+  document.querySelectorAll('#movementGrid button').forEach(btn => {
+    btn.addEventListener('click', () => btn.classList.toggle('active'));
+  });
+
+  function buildPrompt() {
+    const name = productName.value.trim() || 'product';
+    const active = [...document.querySelectorAll('#movementGrid button.active')]
+      .map(b => b.getAttribute('data-mv'));
+    const extra = extraPrompt.value.trim();
+
+    if (active.length === 0) throw new Error('Kam se kam 1 movement select karo!');
+
+    let movementsText;
+    if (active.length === 1) movementsText = active[0];
+    else movementsText = active.slice(0, -1).join(', ') + ', and ' + active[active.length - 1];
+
+    let prompt = `Using the exact uploaded ${name} image as the reference, generate a cinematic video sequence that replicates all the camera angles and movements from the reference video. The video must strictly maintain the ${name}'s original proportions, color combination, logo, and all design details without any changes. Include the following camera movements sequentially: ${movementsText}, while keeping the ${name} completely unchanged.`;
+
+    if (extra) prompt += ' ' + extra + '.';
+    return prompt;
+  }
+
+  generateBtn.addEventListener('click', async () => {
+    hideError();
+
+    if (!imageDataUrl) { showError('❌ Pehle photo upload karo'); return; }
+
+    let prompt;
+    try { prompt = buildPrompt(); }
+    catch (e) { showError('❌ ' + e.message); return; }
+
+    generateBtn.disabled = true;
+    progressWrap.classList.add('show');
+    resultBox.classList.remove('show');
+    updateProgress(5, 'Replicate pe bhej rahe hain...');
+
+    try {
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          image: imageDataUrl,
+          prompt: prompt
+        })
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error || 'API fail (status ' + response.status + ')');
+      }
+
+      const prediction = await response.json();
+      console.log('Prediction:', prediction);
+      updateProgress(20, 'AI video bana raha hai... (2-4 min)');
+
+      const videoUrl = await pollPrediction(prediction.id);
+
+      updateProgress(100, '✅ Video ready!');
+      resultVideo.src = videoUrl;
+      downloadBtn.href = videoUrl;
+      resultBox.classList.add('show');
+      progressWrap.classList.remove('show');
+      generateBtn.disabled = false;
+
+    } catch (err) {
+      console.error(err);
+      showError('❌ ' + (err.message || 'Kuch problem hui'));
+      generateBtn.disabled = false;
+      progressWrap.classList.remove('show');
+    }
+  });
+
+  async function pollPrediction(id) {
+    const maxWait = 5 * 60 * 1000;
+    const start = Date.now();
+
+    while (Date.now() - start < maxWait) {
+      const r = await fetch('/api/status?id=' + id);
+      if (!r.ok) throw new Error('Poll fail');
+      const p = await r.json();
+
+      const elapsed = Math.round((Date.now() - start) / 1000);
+      updateProgress(
+        Math.min(95, 20 + (elapsed * 1.2)),
+        'AI video bana raha hai... (' + elapsed + 's) — ' + p.status
+      );
+
+      if (p.status === 'succeeded') {
+        const out = Array.isArray(p.output) ? p.output[0] : p.output;
+        if (!out) throw new Error('Video URL nahi mila');
+        return out;
+      }
+      if (p.status === 'failed' || p.status === 'canceled') {
+        throw new Error(p.error || 'AI fail hui');
+      }
+
+      await new Promise(r => setTimeout(r, 3000));
+    }
+    throw new Error('Timeout — 5 min me video nahi bani');
+  }
+
+  function updateProgress(pct, text) {
+    progressBar.style.width = Math.max(0, Math.min(100, pct)) + '%';
+    progressText.textContent = text;
+  }
+  function showError(msg) { errorBox.textContent = msg; errorBox.classList.add('show'); }
+  function hideError() { errorBox.classList.remove('show'); }
+
+  againBtn.addEventListener('click', () => {
+    resultBox.classList.remove('show');
+    resultVideo.src = '';
+  });
+})();
+</script>
+</body>
+</html>
